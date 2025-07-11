@@ -1,94 +1,114 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import type { Person, FamilyTreeData } from "../types/family"
-import { PersonCard } from "./PersonCard"
-import { PersonModal } from "./PersonModal"
-import { AddPersonForm } from "./AddPersonForm"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Heart, Baby, Users } from "lucide-react"
+import { useState, useMemo } from "react";
+import type { Person, FamilyTreeData } from "../types/family";
+import { PersonCard } from "./PersonCard";
+import { PersonModal } from "./PersonModal";
+import { AddPersonForm } from "./AddPersonForm";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Heart, Baby, Users } from "lucide-react";
 
 interface FamilyTreeProps {
-  familyData: FamilyTreeData
-  onUpdatePerson: (id: string, updates: Partial<Person>) => void
-  onAddChild: (parentIds: string[], childData: Omit<Person, "id" | "parentIds">) => void
-  onAddSpouse: (personId: string, spouseData: Omit<Person, "id" | "spouseId">) => void
+  familyData: FamilyTreeData;
+  onUpdatePerson: (id: string, updates: Partial<Person>) => void;
+  onAddChild: (
+    parentIds: string[],
+    childData: Omit<Person, "id" | "parentIds">
+  ) => void;
+  onAddSpouse: (
+    personId: string,
+    spouseData: Omit<Person, "id" | "spouseId">
+  ) => void;
 }
 
 interface Generation {
-  level: number
-  people: Person[]
-  couples: Array<{ person1: Person; person2: Person }>
+  level: number;
+  people: Person[];
+  couples: Array<{ person1: Person; person2: Person }>;
 }
 
-export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse }: FamilyTreeProps) {
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [addFormMode, setAddFormMode] = useState<"child" | "spouse">("child")
-  const [selectedPersonId, setSelectedPersonId] = useState<string>("")
+export function FamilyTree({
+  familyData,
+  onUpdatePerson,
+  onAddChild,
+  onAddSpouse,
+}: FamilyTreeProps) {
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addFormMode, setAddFormMode] = useState<"child" | "spouse">("child");
+  const [selectedPersonId, setSelectedPersonId] = useState<string>("");
 
   // Organize people by generations
   const generations = useMemo(() => {
-    const getPersonLevel = (personId: string, visited: Set<string> = new Set()): number => {
+    const getPersonLevel = (
+      personId: string,
+      visited: Set<string> = new Set()
+    ): number => {
       // 1️⃣ Bail out if the reference is missing
-      const person = familyData.people[personId]
-      if (!person) return 0
+      const person = familyData.people[personId];
+      if (!person) return 0;
 
       // 2️⃣ Prevent infinite loops on circular refs
-      if (visited.has(personId)) return 0
-      visited.add(personId)
+      if (visited.has(personId)) return 0;
+      visited.add(personId);
 
       // 3️⃣ No parents ⇒ founder level
-      if (!person.parentIds || person.parentIds.length === 0) return 0
+      if (!person.parentIds || person.parentIds.length === 0) return 0;
 
       // 4️⃣ Recursively inspect parents (ignore missing parents safely)
-      const parentLevels = person.parentIds.map((pid) => getPersonLevel(pid, visited))
-      return Math.max(...parentLevels) + 1
-    }
+      const parentLevels = person.parentIds.map((pid) =>
+        getPersonLevel(pid, visited)
+      );
+      return Math.max(...parentLevels) + 1;
+    };
 
-    const levelMap = new Map<number, Person[]>()
+    const levelMap = new Map<number, Person[]>();
 
     Object.values(familyData.people).forEach((person) => {
-      const level = getPersonLevel(person.id)
+      const level = getPersonLevel(person.id);
       if (!levelMap.has(level)) {
-        levelMap.set(level, [])
+        levelMap.set(level, []);
       }
-      levelMap.get(level)!.push(person)
-    })
+      levelMap.get(level)!.push(person);
+    });
 
-    const generationsArray: Generation[] = []
+    const generationsArray: Generation[] = [];
 
     Array.from(levelMap.entries())
       .sort(([a], [b]) => a - b)
       .forEach(([level, people]) => {
-        const couples: Array<{ person1: Person; person2: Person }> = []
-        const singles: Person[] = []
-        const processed = new Set<string>()
+        const couples: Array<{ person1: Person; person2: Person }> = [];
+        const singles: Person[] = [];
+        const processed = new Set<string>();
 
         people.forEach((person) => {
-          if (processed.has(person.id)) return
+          if (processed.has(person.id)) return;
 
-          if (person.spouseId && !processed.has(person.spouseId) && people.find((p) => p.id === person.spouseId)) {
-            const spouse = people.find((p) => p.id === person.spouseId)!
-            couples.push({ person1: person, person2: spouse })
-            processed.add(person.id)
-            processed.add(spouse.id)
+          if (
+            person.spouseId &&
+            !processed.has(person.spouseId) &&
+            people.find((p) => p.id === person.spouseId)
+          ) {
+            const spouse = people.find((p) => p.id === person.spouseId)!;
+            couples.push({ person1: person, person2: spouse });
+            processed.add(person.id);
+            processed.add(spouse.id);
           } else {
-            singles.push(person)
-            processed.add(person.id)
+            singles.push(person);
+            processed.add(person.id);
           }
-        })
+        });
 
         generationsArray.push({
           level,
           people: singles,
           couples,
-        })
-      })
+        });
+      });
 
-    return generationsArray
-  }, [familyData])
+    return generationsArray;
+  }, [familyData]);
 
   const getGenerationLabel = (level: number) => {
     const labels = [
@@ -99,18 +119,22 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
       "4th Generation",
       "5th Generation",
       "6th Generation",
-    ]
-    return labels[level] || `${level}th Generation`
-  }
+    ];
+    return labels[level] || `${level}th Generation`;
+  };
 
   const renderCouple = (couple: { person1: Person; person2: Person }) => (
-    <div key={`${couple.person1.id}-${couple.person2.id}`} className="flex flex-col items-center">
+    <div
+      key={`${couple.person1.id}-${couple.person2.id}`}
+      className="flex flex-col items-center"
+    >
       <div className="flex items-center space-x-4 p-4 bg-white rounded-lg border-2 border-pink-200 shadow-sm">
         <div className="text-center">
           <PersonCard
             person={couple.person1}
             onClick={() => setSelectedPerson(couple.person1)}
             isSelected={selectedPerson?.id === couple.person1.id}
+            allPeople={familyData.people}
           />
         </div>
 
@@ -124,6 +148,7 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
             person={couple.person2}
             onClick={() => setSelectedPerson(couple.person2)}
             isSelected={selectedPerson?.id === couple.person2.id}
+            allPeople={familyData.people}
           />
         </div>
       </div>
@@ -134,9 +159,9 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
           size="sm"
           variant="outline"
           onClick={() => {
-            setSelectedPersonId(couple.person1.id)
-            setAddFormMode("child")
-            setShowAddForm(true)
+            setSelectedPersonId(couple.person1.id);
+            setAddFormMode("child");
+            setShowAddForm(true);
           }}
         >
           <Baby className="w-3 h-3 mr-1" />
@@ -144,7 +169,7 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
         </Button>
       </div>
     </div>
-  )
+  );
 
   const renderSinglePerson = (person: Person) => (
     <div key={person.id} className="flex flex-col items-center">
@@ -152,6 +177,7 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
         person={person}
         onClick={() => setSelectedPerson(person)}
         isSelected={selectedPerson?.id === person.id}
+        allPeople={familyData.people}
       />
 
       {/* Action buttons */}
@@ -160,9 +186,9 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
           size="sm"
           variant="outline"
           onClick={() => {
-            setSelectedPersonId(person.id)
-            setAddFormMode("child")
-            setShowAddForm(true)
+            setSelectedPersonId(person.id);
+            setAddFormMode("child");
+            setShowAddForm(true);
           }}
         >
           <Baby className="w-3 h-3 mr-1" />
@@ -173,9 +199,9 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
             size="sm"
             variant="outline"
             onClick={() => {
-              setSelectedPersonId(person.id)
-              setAddFormMode("spouse")
-              setShowAddForm(true)
+              setSelectedPersonId(person.id);
+              setAddFormMode("spouse");
+              setShowAddForm(true);
             }}
           >
             <Heart className="w-3 h-3 mr-1" />
@@ -184,7 +210,7 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
         )}
       </div>
     </div>
-  )
+  );
 
   return (
     <div className="w-full space-y-8">
@@ -193,7 +219,10 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
           {/* Generation Header */}
           <div className="flex items-center justify-center space-x-3">
             <div className="h-px bg-gray-300 flex-1"></div>
-            <Badge variant="outline" className="px-4 py-2 text-lg font-semibold">
+            <Badge
+              variant="outline"
+              className="px-4 py-2 text-lg font-semibold"
+            >
               <Users className="w-4 h-4 mr-2" />
               {getGenerationLabel(generation.level)}
             </Badge>
@@ -213,13 +242,17 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
           <div className="text-center text-sm text-gray-500">
             {generation.couples.length > 0 && (
               <span>
-                {generation.couples.length} couple{generation.couples.length !== 1 ? "s" : ""}
+                {generation.couples.length} couple
+                {generation.couples.length !== 1 ? "s" : ""}
               </span>
             )}
-            {generation.couples.length > 0 && generation.people.length > 0 && <span> • </span>}
+            {generation.couples.length > 0 && generation.people.length > 0 && (
+              <span> • </span>
+            )}
             {generation.people.length > 0 && (
               <span>
-                {generation.people.length} individual{generation.people.length !== 1 ? "s" : ""}
+                {generation.people.length} individual
+                {generation.people.length !== 1 ? "s" : ""}
               </span>
             )}
           </div>
@@ -231,6 +264,7 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
         isOpen={!!selectedPerson}
         onClose={() => setSelectedPerson(null)}
         onUpdate={onUpdatePerson}
+        allPeople={familyData.people}
       />
 
       <AddPersonForm
@@ -243,5 +277,5 @@ export function FamilyTree({ familyData, onUpdatePerson, onAddChild, onAddSpouse
         people={familyData.people}
       />
     </div>
-  )
+  );
 }

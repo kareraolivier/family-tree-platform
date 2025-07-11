@@ -1,17 +1,23 @@
-"use client"
+"use client";
 
-import type { Person } from "../types/family"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Calendar, Skull } from "lucide-react"
+import type { Person } from "../types/family";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Skull } from "lucide-react";
 
 interface PersonCardProps {
-  person: Person
-  onClick: () => void
-  isSelected?: boolean
+  person: Person;
+  onClick: () => void;
+  isSelected?: boolean;
+  allPeople?: Record<string, Person>; // Add this line
 }
 
-export function PersonCard({ person, onClick, isSelected = false }: PersonCardProps) {
+export function PersonCard({
+  person,
+  onClick,
+  isSelected = false,
+  allPeople,
+}: PersonCardProps) {
   return (
     <Card
       className={`relative cursor-pointer transition-all hover:shadow-lg ${
@@ -39,7 +45,9 @@ export function PersonCard({ person, onClick, isSelected = false }: PersonCardPr
           <div className="flex items-center justify-center text-xs text-gray-600 mb-1">
             <Calendar className="w-3 h-3 mr-1" />
             {new Date(person.dateOfBirth).getFullYear()}
-            {person.isDeceased && person.dateOfDeath && <span> - {new Date(person.dateOfDeath).getFullYear()}</span>}
+            {person.isDeceased && person.dateOfDeath && (
+              <span> - {new Date(person.dateOfDeath).getFullYear()}</span>
+            )}
           </div>
         )}
 
@@ -49,6 +57,12 @@ export function PersonCard({ person, onClick, isSelected = false }: PersonCardPr
           </Badge>
         )}
 
+        {person.spouseId && allPeople?.[person.spouseId] && (
+          <div className="text-xs text-gray-600 mt-1">
+            ♥ {allPeople[person.spouseId].name}
+          </div>
+        )}
+
         {person.isDeceased && (
           <Badge variant="destructive" className="text-xs mt-1">
             Deceased
@@ -56,5 +70,5 @@ export function PersonCard({ person, onClick, isSelected = false }: PersonCardPr
         )}
       </div>
     </Card>
-  )
+  );
 }

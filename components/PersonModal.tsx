@@ -1,46 +1,64 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import type { Person } from "../types/family"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Calendar, Edit, Save, X } from "lucide-react"
+import { useState } from "react";
+import type { Person } from "../types/family";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Calendar, Edit, Save, X, Heart } from "lucide-react";
 
 interface PersonModalProps {
-  person: Person | null
-  isOpen: boolean
-  onClose: () => void
-  onUpdate: (id: string, updates: Partial<Person>) => void
+  person: Person | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdate: (id: string, updates: Partial<Person>) => void;
+  allPeople: Record<string, Person>; // Add this line
 }
 
-export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editData, setEditData] = useState<Partial<Person>>({})
+export function PersonModal({
+  person,
+  isOpen,
+  onClose,
+  onUpdate,
+  allPeople,
+}: PersonModalProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState<Partial<Person>>({});
 
-  if (!person) return null
+  if (!person) return null;
 
   const handleEdit = () => {
-    setEditData(person)
-    setIsEditing(true)
-  }
+    setEditData(person);
+    setIsEditing(true);
+  };
 
   const handleSave = () => {
-    onUpdate(person.id, editData)
-    setIsEditing(false)
-    setEditData({})
-  }
+    onUpdate(person.id, editData);
+    setIsEditing(false);
+    setEditData({});
+  };
 
   const handleCancel = () => {
-    setIsEditing(false)
-    setEditData({})
-  }
+    setIsEditing(false);
+    setEditData({});
+  };
 
-  const currentData = isEditing ? { ...person, ...editData } : person
+  const currentData = isEditing ? { ...person, ...editData } : person;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -72,7 +90,10 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
           <div className="space-y-4">
             <div className="text-center">
               <img
-                src={currentData.profilePicture || "/placeholder.svg?height=120&width=120"}
+                src={
+                  currentData.profilePicture ||
+                  "/placeholder.svg?height=120&width=120"
+                }
                 alt={currentData.name}
                 className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-gray-200"
               />
@@ -85,7 +106,9 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
                   <Input
                     id="name"
                     value={currentData.name}
-                    onChange={(e) => setEditData((prev) => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({ ...prev, name: e.target.value }))
+                    }
                   />
                 </div>
 
@@ -94,7 +117,12 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
                   <Input
                     id="profilePicture"
                     value={currentData.profilePicture || ""}
-                    onChange={(e) => setEditData((prev) => ({ ...prev, profilePicture: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        profilePicture: e.target.value,
+                      }))
+                    }
                   />
                 </div>
 
@@ -102,7 +130,12 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
                   <Label htmlFor="gender">Gender</Label>
                   <Select
                     value={currentData.gender}
-                    onValueChange={(value) => setEditData((prev) => ({ ...prev, gender: value as Person["gender"] }))}
+                    onValueChange={(value) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        gender: value as Person["gender"],
+                      }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -120,16 +153,27 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
                 <p>
                   <strong>Gender:</strong> {currentData.gender}
                 </p>
+                {currentData.spouseId && allPeople[currentData.spouseId] && (
+                  <div className="flex items-center">
+                    <Heart className="w-4 h-4 mr-2 text-pink-500" />
+                    <strong>Spouse:</strong>
+                    <span className="ml-1 text-pink-600">
+                      {allPeople[currentData.spouseId].name}
+                    </span>
+                  </div>
+                )}
                 {currentData.dateOfBirth && (
                   <p className="flex items-center">
                     <Calendar className="w-4 h-4 mr-2" />
-                    <strong>Born:</strong> {new Date(currentData.dateOfBirth).toLocaleDateString()}
+                    <strong>Born:</strong>{" "}
+                    {new Date(currentData.dateOfBirth).toLocaleDateString()}
                   </p>
                 )}
                 {currentData.isDeceased && currentData.dateOfDeath && (
                   <p className="flex items-center text-red-600">
                     <Calendar className="w-4 h-4 mr-2" />
-                    <strong>Died:</strong> {new Date(currentData.dateOfDeath).toLocaleDateString()}
+                    <strong>Died:</strong>{" "}
+                    {new Date(currentData.dateOfDeath).toLocaleDateString()}
                   </p>
                 )}
               </div>
@@ -145,7 +189,12 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
                     id="dateOfBirth"
                     type="date"
                     value={currentData.dateOfBirth || ""}
-                    onChange={(e) => setEditData((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        dateOfBirth: e.target.value,
+                      }))
+                    }
                   />
                 </div>
 
@@ -153,7 +202,9 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
                   <Switch
                     id="isDeceased"
                     checked={currentData.isDeceased}
-                    onCheckedChange={(checked) => setEditData((prev) => ({ ...prev, isDeceased: checked }))}
+                    onCheckedChange={(checked) =>
+                      setEditData((prev) => ({ ...prev, isDeceased: checked }))
+                    }
                   />
                   <Label htmlFor="isDeceased">Deceased</Label>
                 </div>
@@ -165,7 +216,12 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
                       id="dateOfDeath"
                       type="date"
                       value={currentData.dateOfDeath || ""}
-                      onChange={(e) => setEditData((prev) => ({ ...prev, dateOfDeath: e.target.value }))}
+                      onChange={(e) =>
+                        setEditData((prev) => ({
+                          ...prev,
+                          dateOfDeath: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 )}
@@ -175,7 +231,12 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
                   <Input
                     id="occupation"
                     value={currentData.occupation || ""}
-                    onChange={(e) => setEditData((prev) => ({ ...prev, occupation: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        occupation: e.target.value,
+                      }))
+                    }
                   />
                 </div>
 
@@ -184,7 +245,9 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
                   <Textarea
                     id="bio"
                     value={currentData.bio || ""}
-                    onChange={(e) => setEditData((prev) => ({ ...prev, bio: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({ ...prev, bio: e.target.value }))
+                    }
                     rows={4}
                   />
                 </div>
@@ -208,5 +271,5 @@ export function PersonModal({ person, isOpen, onClose, onUpdate }: PersonModalPr
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
